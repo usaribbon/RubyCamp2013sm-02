@@ -49,7 +49,8 @@ class Game
   def play
     if Input.mousePush?(M_LBUTTON)
       #@shizimis << Shizimi.new((@daiza.x + (@daiza.image.width / 2) - (@shizimi_img.width / 2)), @daiza.y, @shizimi_img)
-      @bullets << Bullet.new((@daiza.x + (@daiza.image.width / 2) - (@shizimi_img.width / 2)), @daiza.y,@selectedBullet_img,stage)
+      bullet = Bullet.new((@daiza.x + (@daiza.image.width / 2) - (@shizimi_img.width / 2)), @daiza.y,@selectedBullet_img,stage)
+      @bullets << bullet
 
     end
 
