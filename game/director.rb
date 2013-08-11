@@ -18,7 +18,9 @@ class Director
     # ゲームを構成する各シーンの管理オブジェクトを生成
     @@scenes = {}
     @@scenes[:title]  = Title.new
-    @@scenes[:game]   = Game.new(1)
+    @@scenes[:game1]   = Game.new(1)#しまねっこ
+    @@scenes[:game2]   = Game.new(2)#ルビー
+    @@scenes[:game3]   = Game.new(3)#勾玉
     @@scenes[:ending] = Ending.new
     @@scenes[:gameover] = Gameover.new
     @@current_scene = :title

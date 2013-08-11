@@ -14,7 +14,6 @@ class Game
   attr_accessor :selectedBullet
 
   def initialize(mode)
-    @mode = mode
 
     #ウィンドウサイズ
     Window.width = 800
@@ -36,34 +35,17 @@ class Game
     setSelectedBulletImage(@selectedBullet)
 
 
-    #ゲームのステージ管理
-    @stage = Stage.new
-    #弾格納用配列
-    @bullets =[]
-
     @kimeuchi = Kimeuchi.new
     @hairetu =@kimeuchi.loadBulletFile(mode)
-    @resimg = Array.new(18).map! {Array.new(20,0)}
+    @resimg = Array.new(18).map! {Array.new}
     18.times do |y|
       20.times do |x|
         if @hairetu[y][x] == 1
-          #num = @kimeuchi.getBullet
-          setSelectedBulletImage(mode)
-          @selectedBullet = mode
-          @bullets << Bullet.new(x*25+275,y*25+75,@selectedBullet_img,mode,@stage,true)
-          @resimg[y][x] = @bullets.last
-        elsif @hairetu[y][x] == 9
-          @resimg[y][x] = 9
+          @resimg[y][x] = @kimeuchi.getBullet
         end
       end
     end
-    puts "初期配列"
-    @resimg.each do |v|
-      p v
-    end
 
-    @stage.stageList = @resimg
-    @stage.bullets = @bullets
 
 
     #Mainイメージのロード
@@ -74,6 +56,8 @@ class Game
       @main_image = Util.load_image(Magatama_image_path)
     end
 
+    #ゲームのステージ管理
+    @stage = Stage.new(Array.new(18).map{Array.new(20,0)})
 
     #カウントダウンタイマーの生成
     @cdTimer = CDTimer.new(32)
@@ -106,14 +90,15 @@ class Game
     @back_ground = Sprite.new(0,0,Util.load_image("game_bg.png"))
 
     #弾格納用配列
+    @bullets = []
 
 
     #Mainイメージのロード
-    #  magatama_img = Image.load("./images/magatama.png")
-    # magatama_img.setColorKey([0, 0, 0])
+  #  magatama_img = Image.load("./images/magatama.png")
+   # magatama_img.setColorKey([0, 0, 0])
     #@main_image = Sprite.new(275,80,magatama_img)
-  	@main_image.setColorKey([255, 248, 174])
-  	@main_image = Sprite.new(275,80,@main_image)
+	@main_image.setColorKey([255, 248, 174])
+	@main_image = Sprite.new(275,80,@main_image)
     #@main_image = Sprite.new(275,80,@main_image)
 
   end
@@ -123,22 +108,24 @@ class Game
     @back_ground.draw
 
     @main_image.draw
-
+    Sprite.check(@bullets,@main_image)
+	  Sprite.check(@bullets)
+	  Sprite.check(@bullets,@ini)
     #時間表示
     @cdTimer.reload
     Window.drawFont(100, 60, "#{@cdTimer.min}:#{@cdTimer.sec}", @cdTimer,{:color=>[0,0,0]} )
 
 
-    # @ini=[]
-    # 18.times do |y|
-    #   20.times do |x|
-    #     if @hairetu[y][x] == 1
-    #       @ini << Sprite.new(x*25+290,y*25+80,@resimg[y][x])
-    #       Window.draw(x*25+290,y*25+80,@resimg[y][x])
-    #         end
-    #       end
-    #   end
-    # Sprite.draw(@ini)
+    @ini=[]
+    18.times do |y|
+      20.times do |x|
+        if @hairetu[y][x] == 1
+          @ini << Sprite.new(x*25+290,y*25+80,@resimg[y][x])
+          Window.draw(x*25+290,y*25+80,@resimg[y][x])
+            end
+          end
+      end
+    Sprite.draw(@ini)
 
 
     if Input.mousePush?(M_LBUTTON)
@@ -149,7 +136,7 @@ class Game
       if @pointer.x >= 250 
         position_x = (@daiza.x + (@daiza.image.width / 2) - (@selectedBullet_img.width / 2))
        position_y = ( @daiza.direction != :up ? @daiza.y + @daiza.rimage.height : @daiza.y)
-        bullet = Bullet.new(position_x, position_y,@selectedBullet_img,@selectedBullet,@stage,false)
+        bullet = Bullet.new(position_x, position_y,@selectedBullet_img,@selectedBullet,@stage)
         move_point_x = Input.mousePosX - position_x
         move_point_y = Input.mousePosY - position_y
         #x方向のマイナス判定
@@ -179,8 +166,8 @@ class Game
       else
       #弾選択と衝突判定
         Sprite.check(@pointer, @selectors)
+				@stage.clear
       end
-
     end
 
    #残り時間のタイトル
@@ -202,22 +189,8 @@ class Game
     @daiza.update
     @daiza.draw
 
-    Sprite.check(@bullets,@main_image)
-    Sprite.check(@bullets,@bullets)
     Sprite.update(@bullets)
     Sprite.draw(@bullets)
-
-    Sprite.clean(@bullets)
-
-    if @stage.bullets.compact.empty?
-      if @mode == 1
-        Director.change_scene(:game2)
-      elsif @mode  == 2
-        Director.change_scene(:game3)
-      elsif @mode == 3
-        Director.change_scene(:ending)
-      end
-    end
 
     if @cdTimer.min == 0 && @cdTimer.sec <= 0
       Director.change_scene(:gameover)

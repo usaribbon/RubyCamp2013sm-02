@@ -3,9 +3,9 @@ require "dxruby"
 
 class Bullet < Sprite 
 
-	attr_accessor :type
+	attr_accessor :type, :vanished, :stage_x, :stage_y
 
-	def initialize(x=0,y=0,image=nil,type=0,stage)
+	def initialize(x=0,y=0,image=nil,type=0,stage,isFirst)
 		super(x,y,image)
 
 		#タイプ
@@ -14,10 +14,15 @@ class Bullet < Sprite
 		@move_x = 0
 		@move_y = 0
 		#ステージ上の位置(吸着位置)
-		# @stage_x = 0
-		# @stage_y = 0
+		@stage_x = (x/25.to_i) - 11
+		@stage_y = (y/25.to_i) - 3
 
 		@stage  = stage
+
+		#移動後フラグ,trueの場合ショットヒットしない
+		@isMoved = isFirst
+
+		@vanished = false
 	end
 
 	def remove 
@@ -32,26 +37,98 @@ class Bullet < Sprite
 	end
 
 	#ステージ上の位置
-	def set_stage(x,y)
-		@stage_x = x
-		@stage_y = y
+	def set_stage(stagex,stagey)
+		@stage_x = stagex.to_i
+		@stage_y = stagey.to_i
+		self.x = ((stagex.to_i + 11)* 25) 
+		self.y = ((stagey.to_i + 3) * 25)
+	end
+
+	def checkStageList(column_count, row_count)
+		puts "c: #{column_count}, r: #{row_count}"
+		@stage.stageList.each do |v|
+			#p v
+		end
+		val = @stage.stageList[column_count][row_count]
+		if val == 0 then
+			p "#{column_count},,#{row_count},"
+			self.set_stage(row_count,column_count)
+			@stage.stageList[column_count][row_count] = self
+			remove
+			return true
+		else 
+			return false
+		end
 	end
 
 	#吸着メソッド
-	def adsrob
-		row_count = (self.x/25) -11
-		column_count = (self.y/25) -3
+	def adsrob(direction,obj=nil)
+		puts "adsrob:#{direction},obj:#{obj}"
+		#puts "selfx:#{self.x},selfy:#{self.y},,objx#{obj.x},objy#{obj.y}"
+		row_count = (((self.x + self.image.width/2)/25).to_i - 11)
+		column_count = (((self.y + self.image.height/2)/25).to_i - 3)
 		# #ここで吸着先に弾がないかの判定
-		val = @stage.stageList[column_count][row_count]
-		p val
-		if val  == 0 then 
-			self.x = (row_count+11)*25 
-			self.y = (column_count+3)*25
-			remove
+
+		unless checkStageList(column_count, row_count) then  
+			if direction == :left_up then 
+				p "left_up"
+				x = obj.x - self.x
+				y = obj.y - self.y
+				if y > x then
+					column_count +=1
+				else
+					row_count += 1
+				end
+				unless checkStageList(column_count,row_count) then
+					column_count = ((self.y / 25).to_i - 3)
+					row_count = ((self.x / 25).to_i - 11)
+					checkStageList(column_count,row_count)
+				end
+			elsif  direction == :right_up then
+				p "right_up"
+				x = obj.x - self.x
+				y = self.y - obj.y
+				if y > x then
+					column_count +=1
+				else
+					row_count -= 1
+				end
+				unless checkStageList(column_count,row_count) then
+					column_count = ((self.y / 25).to_i - 3)
+					row_count = ((self.x / 25).to_i - 11)
+					checkStageList(column_count,row_count)
+				end
+			elsif direction == :left_down then
+				p "left_down"
+				x = obj.x - self.x
+				y = self.y - self.y
+				if y > x then
+					column_count -=1
+				else
+					row_count += 1
+				end
+				unless checkStageList(column_count,row_count) then
+					column_count = ((self.y / 25).to_i - 3)
+					row_count = ((self.x / 25).to_i - 11)
+					checkStageList(column_count,row_count)
+				end
+			elsif direction == :right_down then
+				p "right_down"
+				x = self.x - obj.x
+				y = self.y - obj.y		
+						if y > x then
+					column_count -=1
+				else
+					row_count -= 1
+				end
+				unless checkStageList(column_count,row_count) then
+					column_count = ((self.y / 25).to_i - 3)
+					row_count = ((self.x / 25).to_i - 11)
+					checkStageList(column_count,row_count)
+				end
+			end				
 		end
-
-
-		# #連結判定
+		#連結判定
 		@stage.joined_bullet(row_count,column_count,self.type)
 	end
 
@@ -60,52 +137,128 @@ class Bullet < Sprite
  #    	return @vanished
  #  	end
 	def hit(obj)
+		if @isMoved then
+  			return
+  		end
 		body_img = obj.image
 		bullet_img = self.image
-		
-		cpwx = self.x + (bullet_img.width/2)
-		cpwy = self.y + (bullet_img.height/2)
 		mainimgheight = body_img.height
 		mainimgwidth = body_img.width
+	
+		#左上
+		cpwx = self.x 
+		cpwy = self.y
 		mx = cpwx - obj.x 
 		my = cpwy - obj.y 
 		if mx >0 && my >0 then
-			unless body_img.compare(mx,my,[255,248,174]) then
-				adsrob	
-				remove
-			end
+			adsrob(:left_up,obj)
+			@isMoved = true
+			remove
+			return 
+		end
+	#右上
+		cpwx = self.x + (bullet_img.width)
+		cpwy = self.y 
+		mx = cpwx - obj.x 
+		my = cpwy - obj.y 
+		if mx >0 && my >0 then
+			adsrob(:right_up,obj)
+			@isMoved = true
+			remove
+			return 
+		end
+		#左下
+		cpwx = self.x
+		cpwy = self.y + (bullet_img.height)
+		mx = cpwx - obj.x 
+		my = cpwy - obj.y 
+		if mx >0 && my >0 then
+			adsrob(:left_down,obj)
+			@isMoved = true
+			remove
+			return 
+		end
+		#右下
+		cpwx = self.x + (bullet_img.width)
+		cpwy = self.y + (bullet_img.height)
+		mx = cpwx - obj.x 
+		my = cpwy - obj.y 
+		if mx >0 && my >0 then
+			adsrob(:right_down,obj)
+			@isMoved = true
+			remove
+			return 
 		end
 	end
   	# 他のオブジェクトから衝突した際に呼ばれるメソッド
   	def shot(obj)
-
+  		if @isMoved then
+  			return
+  		end
+  		puts "ショット"
+# 		body_img = obj.image
 		body_img = obj.image
 		bullet_img = self.image
-		
-		cpwx = self.x + (bullet_img.width/2)
-		cpwy = self.y + (bullet_img.height/2)
 		mainimgheight = body_img.height
 		mainimgwidth = body_img.width
+
+		#左上
+		cpwx = self.x 
+		cpwy = self.y
 		mx = cpwx - obj.x 
 		my = cpwy - obj.y 
 		if mx >0 && my >0 then
 			unless body_img.compare(mx,my,[255,248,174]) then
-			adsrob	
-remove
-				
+				adsrob(:left_up,obj)
+				 @isMoved = true
+				remove
+				return 
 			end
 		end
-  		#勾玉の時は，衝突判定
-  		#それ以外の時は，あたり判定のチェック
-  	#	if obj.type == self.@type then
-  			#連結判定
-  			
-  	#	end
+		#右上
+		cpwx = self.x + (bullet_img.width)
+		cpwy = self.y 
+		mx = cpwx - obj.x 
+		my = cpwy - obj.y 
+		if mx >0 && my >0 then
+			unless body_img.compare(mx,my,[255,248,174]) then
+				adsrob(:right_up,obj)
+				 @isMoved = true
+				remove
+				return 
+			end
+		end
+		#左下
+		cpwx = self.x
+		cpwy = self.y + (bullet_img.height)
+		mx = cpwx - obj.x 
+		my = cpwy - obj.y 
+		if mx >0 && my >0 then
+			unless body_img.compare(mx,my,[255,248,174]) then
+				adsrob(:left_down,obj)
+				 @isMoved = true
+				remove
+				return
+			end
+		end
+		#右下
+		cpwx = self.x + (bullet_img.width)
+		cpwy = self.y + (bullet_img.height)
+		mx = cpwx - obj.x 
+		my = cpwy - obj.y 
+		if mx >0 && my >0 then
+			unless body_img.compare(mx,my,[255,248,174]) then
+			adsrob(:right_down,obj)	
+		 @isMoved = true
+			remove
+			return 
+			end
+		end
 
-  		#吸着
+  	end
 
-  		#消すとき
-    	# @vanished = true
+  	def vanished?
+  		@vanished
   	end
 
 	def update

@@ -6,7 +6,7 @@ class Title
 
   def play
     if Input.keyPush?(K_SPACE)
-      Director.change_scene(:game)
+      Director.change_scene(:game1)
     end
     Window.draw(0, 0, @image)
   end
