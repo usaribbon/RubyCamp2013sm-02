@@ -1,13 +1,15 @@
 require_relative 'lib/daiza'
-require_relative 'lib/shizimi'
 require_relative 'lib/stage'
 require_relative 'lib/bullet'
-
+require_relative 'lib/CDTimer'
+require_relative 'lib/BulletSelector'
 require_relative 'lib/util'
+require_relative 'lib/readyimg'
 
 require_relative 'scene/title'
 require_relative 'scene/game'
 require_relative 'scene/ending'
+require_relative 'scene/gameover'
 
 # ゲーム進行管理用クラス
 class Director
@@ -18,6 +20,7 @@ class Director
     @@scenes[:title]  = Title.new
     @@scenes[:game]   = Game.new(1)
     @@scenes[:ending] = Ending.new
+    @@scenes[:gameover] = Gameover.new
     @@current_scene = :title
   end
 

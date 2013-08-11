@@ -18,12 +18,12 @@ class Stage
 		search(x,y,type)
 
 		if @count > 2 then
-			puts "検知したよ！"
+			puts "3個以上検知したよ！"
 			p "count ",@count
 			p @checkedHashMap
 			
 			#該当するBullet消します
-
+			
 		end
  	 end
 
@@ -32,7 +32,7 @@ class Stage
  	 		return
  	 	end
 
- 	 	if @stage[y][x] == type then
+ 	 	if @stageList[y][x] == type then
  	 		@checkedList[y][x] = 1
  	 		@checkedHashMap[y.to_s+":"+x.to_s] = type
  	 		@count += 1
